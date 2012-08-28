@@ -1,0 +1,165 @@
+* { 
+    margin: 0px;
+    padding: 0px;
+}
+body { 
+    background-color: #dddddd;
+    font-family: verdana;
+    font-size: 12px;
+}
+#frame {
+    margin: 0 auto; 
+    margin-top: 30px; 
+    width: 900px; 
+    height: 500px; 
+    border-style: solid; border-width: 1px; border-color: #000000; border-radius: 5px; 
+    -webkit-box-shadow:  5px 5px 2px 2px rgba(0, 0, 0, 0.5);
+    box-shadow:  5px 5px 2px 2px rgba(0, 0, 0, 0.5);
+    background-color: #eeeeee;
+}
+#header {
+    width: 100%; 
+    height: 50px;  
+    border-style: solid; border-width: 0px; border-bottom-width: 1px; border-color: #000000;
+    overflow: hidden;
+}
+#headercontent {
+    position: absolute;
+    width: 900px;
+    text-align: center;
+    padding-top: 15px;
+}
+#time {
+    padding: 30px 10px 0px 0px;
+    text-align: right;
+}
+#bodyleft {
+    float: left;
+    width: 500px;
+    height: 450px;
+    border-style: solid; border-width: 0px; border-right-width: 1px; border-color: #000000;
+}
+#chattabs {
+    padding-top: 5px;
+}
+
+#chat {
+    padding: 0px;
+}
+.chatwindow {
+    margin: 0 auto;
+    padding: 0px;
+    width: 480px;
+    height: 300px;
+    border: 1px solid #aed0ea;
+    border-radius: 6px;
+    overflow: hidden;
+    overflow-y: auto;
+    background: #deedf7 url(cupertino/images/ui-bg_highlight-soft_100_deedf7_1x100.png) 0 0 repeat-x;
+}
+
+.unread {
+    color: red !important;
+}
+
+.ui-widget-header { width: 480px; }
+
+#chatinput {
+    margin: 0 auto;
+    margin-top: 10px;
+    width: 480px;
+    height: 30px;
+    border-style: solid; border-width: 1px; border-color: #000000; border-radius: 5px;
+    background-color: #ffffff;
+    overflow: hidden;
+}
+#chatinput input {
+    height: 30px;
+    width: 95%;
+    padding: 1px 10px;
+    border-style: none; border-width: 0px; background-color: #ffffff; border-radius: 5px;
+}
+#status {
+    margin: 0 auto;
+    margin-top: 10px;
+    width: 480px;
+    text-align: center;
+}
+#bodymiddle {
+    float: left;
+    width: 150px;
+    height: 450px;
+    border-style: solid;
+    border-width: 0px; border-right-width: 1px; border-color: #000000;
+}
+#powerbutton {
+    width: 150px;
+    height: 40px;
+    border-style: solid; border-width: 0px; border-bottom-width: 1px; border-color: #000000;
+    text-align: center;
+    overflow: hidden;
+}
+#offline {
+    display: none;
+    margin:0 auto;
+    margin-top: 5px;
+    width: 160px;
+    height: 30px;
+    background-image: url(./verbunden.png);
+}
+#connect {
+    display: inline-block;
+    margin:0 auto;
+    margin-top: 5px;
+    width: 160px;
+    height: 30px;
+    background-image: url(./offline.png);
+}
+#blist {
+    height: 409px;
+    overflow: hidden;
+    overflow-y: auto;
+}
+#blist ul {
+    padding: 10px;
+}
+#blist ul li {
+    list-style-type: none;
+    cursor: pointer;
+}
+.buddyhover {
+    background-color: #ffffff;
+}
+#bodyright {
+    text-align: center;
+    height: 450px;
+    overflow: hidden;
+}
+#gauge {
+    padding: 10px 0px;
+    border-style: solid; border-width: 0px; border-bottom-width: 1px; border-color: #000000;
+}
+#smileys, #stats, #rules {
+    display:none;
+    border-style: solid; border-width: 0px; border-bottom-width: 1px; border-color: #000000;
+    cursor: pointer;
+}
+#smileyscontent, #statscontent, #rulescontent {
+    display: none;
+    height: 250px;
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+#rules {
+    display: block;
+}
+
+#rules ul li {
+    padding-left: 10px;
+    text-align: left;
+    list-style-type: none;
+}
+.hidden {
+    display: none;
+}
