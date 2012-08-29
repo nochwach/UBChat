@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title></title>
+		<link type="text/css" href="css/cupertino/jquery-ui-1.8.22.custom.css" rel="stylesheet" />
+		<script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.22.custom.min.js"></script>
+		<!-- Initialisierung von D3 -->
+        <!--<script type="text/javascript" src="js/d3.v2.min.js"></script>-->
+	    <!-- Initialisierung von socket.io -->
+	    <script src="/socket.io/socket.io.js"></script>
+        
+		<!-- Start von node.js -->
+        <script type="text/javascript">
+            //var socket = io.connect();
+        </script>
+        
+		<!-- Chat -->
+		<script type="text/javascript" src="js/chat.js"></script>
+		<link type="text/css" href="css/chat.css" rel="stylesheet" />
+	</head>
+	<body>
+	    <div id="frame">
+	        <div id="header">
+	            <div id="headercontent"><h2>Chat</h2></div>
+	            <div id="time"></div>
+	        </div>
+	        <div id="body">
+	            <div id="bodycontent">
+	                <div id="bodyleft">
+	                    <div id="chattabs">
+	                        <ul>
+		                        <li><a href="#chat">chat</a></li>
+	                        </ul>
+    	                    <div id="chat" class="tabpanel"><div id="chatwindow" class="chatwindow"></div></div>
+    	                </div>
+	                    <div id="chatinput">
+	                        <input type="text" id="input" disabled="disabled" maxlength="500" />
+	                    </div>
+	                    <div id="status">Disconnected</div>
+	                </div>
+	                <div id="bodymiddle">
+	                    <div id="powerbutton">
+	                        <div id="offline"></div>
+                            <div id="connect"></div>
+	                    </div>
+	                    <div id="blist"></div>
+	                </div>
+	                <div id="bodyright">
+	                    <div id="gauge">
+	                        <span id="gaugeviewer"></span>
+	                        <span id="gaugechatter"></span>
+	                    </div>
+	                    <div id="smileys">
+	                        <div id="smileysheader">Smileys</div>
+	                        <div id="smileyscontent">
+	                            <table>
+	                                <tr>
+	                                    <td><img id=":)" src="smileys/smilie_happy_053.gif"></td>
+	                                    <td><img id=":D" src="smileys/smilie_happy_309.gif"></td>
+	                                    <td><img id=":JUBEL:" src="smileys/smilie_happy_011.gif"></td>
+	                                </tr>
+	                                <tr>
+	                                    <td><img id=":ROFL:" src="smileys/smilie_hops_031.gif"></td>
+	                                    <td><img id=":WHAT:" src="smileys/smilie_denk_04.gif"></td>
+	                                    <td><img id=":THANKS:" src="smileys/smilie_schild_033.gif"></td>
+	                                </tr>
+	                                <tr>
+	                                    <td><img id=":BEER:" src="smileys/smilie_trink_033.gif"></td>
+	                                    <td><img id=":BECKS:" src="smileys/smilie_trink_054.gif"></td>
+	                                    <td><img id=":(" src="smileys/ranting.gif"></td>
+	                                </tr>
+	                                <tr>
+	                                    <td><img id=":WALL:" src="smileys/wall.gif"></td>
+	                                    <td><img id=":P" src="smileys/smilie_frech_019.gif"></td>
+	                                    <td>&nbsp;</td>
+	                                </tr>
+	                            </table>
+	                        </div>
+	                    </div>
+	                    <div id="stats">
+	                        <div id="statsheader">Statistiken</div>
+	                        <div id="statscontent">
+	                            <div id="statsctime"></div>
+	                            <div id="statsstime"></div>
+	                        </div>
+	                    </div>
+	                    <div id="rules">
+	                        <div id="rulesheader">Hinweise/Regeln</div>
+	                        <div id="rulescontent">
+	                            <div id="statsrules">
+	                                <ul>
+	                                    <li>nicht flooden</li>
+	                                    <li>keine Schimpfw&ouml;rter</li>
+	                                    <li>saubere Nicknames</li>
+	                                    <li>Nick max 20 Zeichen</li>
+	                                    <li>Text max 500 Zeichen</li>
+	                                    <li>Tabs schlie&szlig;en: Doppelklick</li>
+	                                    <li>Navigieren: Strg+Links/Strg+Rechts</li>
+	                                    <li>Privat: Klick auf Nickname</li>
+	                                </ul>
+	                            <div>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+	</body>
+</html>
+
+
