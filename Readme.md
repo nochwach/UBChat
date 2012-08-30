@@ -50,10 +50,10 @@ Go to js/chat.js and change whatever you want to change ;)
 ------------
 
 replace **** with adminpassword 
-/kick **** Nickname reason
-/ban **** Nickname TimeInMinutes reason
-/unban **** Nickname
-/showbans ****
-/config **** showconfig         <- not yet working
-/config **** set key value      <- not yet working
+* /kick **** Nickname reason
+* /ban **** Nickname TimeInMinutes reason
+* /unban **** Nickname
+* /showbans ****
+* /config **** showconfig         <- not yet working
+* /config **** set key value      <- not yet working
 
