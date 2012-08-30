@@ -8,10 +8,12 @@ exports.chatApp = function (io, fs) {
 		logViewer		:	true,						// log website connections/disconnections?
 		logTimeouts		:	true,						// log timeouts?
 		domainProtocol	:	'http://',					// the used protocol (including :// !)
-		domainPort		:	'www.raindrop.eu:8175/',	
+		domainPort		:	'www.raindrop.eu:8175/',	// domain and port
 		scriptPath		:	'',							// path to script (trailing slash!)
 		smileyPath		:	'smileys/',					// path to smileys (trailing slash!)
-		multipleIPs		:	3,							// Attention: Two connections per user needed if page reloaded!
+		multipleIPs		:	50,							// Attention: Two connections per user needed if page reloaded!
+		floodingMsgs	:	10,							// msgs > floodingTime = msgblock!
+		floodingTime	:	10000,						// time in ms (5 msgs or more == flood)
 		configpass		:	'1234567890'				// pass to kick, ban, configure....
 	}
 	
@@ -38,13 +40,9 @@ exports.chatApp = function (io, fs) {
     smileyObj['^^']    		= { img: 'smilie_happy_165.gif', height: '15' };
     smileyObj[';)']    		= { img: 'smilie_happy_245.gif', height: '15' };
     
-    var usernameBadList = {
-        1:  'admin', 2:  'Admin', 3:  'root', 4:  'Root', 5:  'mod', 6:  'Mod', 7:  'System', 8:  'system', 9:  'SYSTEM'
-    };
-    
-    var msgBadList = {
-        1:  'arsch', 2:  'Arsch', 3:  'a r s c h', 4:  'A r s c h', 5:  'fuck', 6:  'Fuck'
-    };
+    var usernameBadList = 'admin,Admin,root,Root,mod,Mod,System,system,SYSTEM';
+    var msgBadList = 'arsch,Arsch,a r s c h,A r s c h,fuck,Fuck,shit,Shit,SHIT,scheisse,Scheisse,'
+    	+ 'Scheiße,scheiße';
    
     // <-- CONFIG END -> // <-- CONFIG END --> // <-- CONFIG END --> //
     
@@ -64,6 +62,7 @@ exports.chatApp = function (io, fs) {
         io.set('authorization', function (handshakeData, callback) {
             //console.log(handshakeData);
             //console.log(io.sockets.manager.handshaken);
+        	// IP-Limiter
             IpCounter = 1;
             if (Object.keys(io.sockets.manager.handshaken).length > 0) {
                 for (socketId in io.sockets.manager.handshaken) {
@@ -72,6 +71,7 @@ exports.chatApp = function (io, fs) {
                     }
                 }
             }
+            // Ban-Check
             if (Object.keys(banObj).length > 0) {
                 cTime = new Date().getTime();
                 for (bannedName in banObj) {
@@ -110,18 +110,19 @@ exports.chatApp = function (io, fs) {
             newConnection(socket);
         });
                 
-        // enter here if a message comes in
+        // detect incoming messages
         socket.on('message', function(message) {
-            if (userName === false) {                                   // Wenn noch kein Username gesetzt wurde
-                userName = verifyUsername(message.data, chatObj);       // userName verifizieren
-                userColor = colors.shift();                             // Farbe aus Farbpool auswählen
+            if (userName === false) {
+            	// if we don't have a username, the first message will be the new username
+                userName = verifyUsername(message.data, chatObj);
+                userColor = colors.shift();	// choose color from colorpool
                 var dataObj = { type: 'extra', data: {
                     statusType: 'color',
                     color:      userColor,
                     name:       userName
                 }}
                 sentToClient2(false, socket, dataObj);
-                chatObj.chatter[socket.id] = socket;                    // Socket in CLIENTS eintragen
+                chatObj.chatter[socket.id] = socket;	// register socket in chatterlist
                 xLog('name', { 'id': socket.id, 'who': userName, 'what': userColor });
                 var dataObj = { type: 'status', data: {
                     statusType: 'login',
@@ -130,11 +131,11 @@ exports.chatApp = function (io, fs) {
                 sentToClient2(true, chatObj.viewer, dataObj);
                 sendGauge(chatObj);
                 chatObj.info[socket.id] = { 
-                    userid: socket.id,                          // Userid in infoObjekt schreiben
-                    username: userName,                         // Username in infoObjekt schreiben
-                    usercolor: userColor,                       // Usercolor in infoObjekt schreiben
+                    userid: socket.id,
+                    username: userName,
+                    usercolor: userColor,
                     userlogontime: new Date().getTime(),
-                    userlastmsgtime: {},
+                    userlastmsgtime: [],
                     userip: socket.handshake.address.address,
                     userport: socket.handshake.address.port
                 };
@@ -143,10 +144,11 @@ exports.chatApp = function (io, fs) {
                     blist:          chatObj.info
                 }}
                 sentToClient2(true, chatObj.chatter, dataObj);
-            } else {                                            // Wenn bereits ein Username vergeben wurde
+            } else {
+            	// we have a username, so it's a chatroom- or private- message
                 msgText = verifyMessage(message.data);
                 if (configCheck(msgText, socket)) {
-                    xLog('message', { 'who': userName, 'what': msgText }); // Log schreiben
+                    xLog('message', { 'who': userName, 'what': msgText });
                     var msgObj = {
                         time: (new Date()).getTime(),
                         text: msgText,
@@ -154,55 +156,84 @@ exports.chatApp = function (io, fs) {
                         color: userColor,
                         to: message.rcpt
                     }
-                    var privateCheck = usernameExist(chatObj, message.rcpt);
-                    if (privateCheck) {
-                        var dataObj = { type: 'message', data: {
-                            statusType: 'private',
-                            message:    msgObj
-                        }}
-                        sentToClient2(false, chatObj.chatter[privateCheck], dataObj);
-                        var dataObj = { type: 'message', data: {
-                            statusType: 'private',
-                            message:    msgObj
-                        }}
-                        sentToClient2(false, chatObj.chatter[socket.id], dataObj);
-                    } else {
-                        history.push(msgObj);                              // History um aktuelle Nachricht erweitern
-                        history = history.slice(confObj.historyLimit);          // History auf die neuesten X Einträge begrenzen
-                        var validroom = false;
-                        for (room in chatrooms) {
-                            if (message.rcpt == chatrooms[room]) {
-                                var dataObj = { type: 'message', data: {
-                                    statusType: 'message',
-                                    message:    msgObj
-                                }}
-                                sentToClient2(true, chatObj.viewer, dataObj);
-                            } else {
-                                var privateCheck = usernameExist(chatObj, userName);
-                                var dataObj = { type: 'status', data: {
-                                    statusType: '404',
-                                    name:       message.rcpt
-                                }}
-                                sentToClient2(false, chatObj.chatter[privateCheck], dataObj);
-                            }
-                        }
+                    if (floodingProtection(socket.id)) {
+	                    var privateCheck = usernameExist(chatObj, message.rcpt);
+	                    if (privateCheck) {
+	                    	
+	                        var dataObj = { type: 'message', data: {
+	                            statusType: 'private',
+	                            message:    msgObj
+	                        }}
+	                        sentToClient2(false, chatObj.chatter[privateCheck], dataObj);
+	                        var dataObj = { type: 'message', data: {
+	                            statusType: 'private',
+	                            message:    msgObj
+	                        }}
+	                        sentToClient2(false, chatObj.chatter[socket.id], dataObj);
+	                    } else {
+	                    	
+	                        history.push(msgObj);								// insert current msgObj in history
+	                        history = history.slice(confObj.historyLimit);      // limit history
+	                        var validroom = false;
+	                        for (room in chatrooms) {
+	                            if (message.rcpt == chatrooms[room]) {
+	                                var dataObj = { type: 'message', data: {
+	                                    statusType: 'message',
+	                                    message:    msgObj
+	                                }}
+	                                sentToClient2(true, chatObj.viewer, dataObj);
+	                            } else {
+	                                var privateCheck = usernameExist(chatObj, userName);
+	                                var dataObj = { type: 'status', data: {
+	                                    statusType: '404',
+	                                    name:       message.rcpt
+	                                }}
+	                                sentToClient2(false, chatObj.chatter[privateCheck], dataObj);
+	                            }
+	                        }
+	                    }
                     }
                 }
             }
         });
 
-        // Wenn die Verbindung beendet werden soll
+        // detect incoming close-request
         socket.on('close', function() {
             closeConnection(socket, socket.id, 'logout');
 	    });
         
-        // Wenn ein heartbeat eintrifft
+        // detect incoming heartbeats
         socket.on('heartbeat', function() {
-            socketid = socket.id;                               // Socket-Id einlesen
-            heartbeats[socketid] = new Date().getTime();        // aktuellen TIMESTAMP in heartbeat-Objekt schreiben
-            checkHeartbeats(socket);                            // heartbeat-Objekt überprüfen
+            socketid = socket.id;
+            heartbeats[socketid] = new Date().getTime();
+            checkHeartbeats(socket);
         });
     });
+    
+    // floodingProtection
+    function floodingProtection(socketid) {
+    	var lastmsgsArr = chatObj.info[socketid].userlastmsgtime;
+    	if (lastmsgsArr.length < confObj.floodingMsgs) {
+    		lastmsgsArr.push(new Date().getTime());
+    		return true;
+    	} else {
+    		lastmsgsArr.shift();
+			lastmsgsArr.push(new Date().getTime());
+    		oldestMsg = lastmsgsArr[0];
+    		latestMsg = lastmsgsArr[(confObj.floodingMsgs - 1)];
+    		if ((latestMsg - oldestMsg) < confObj.floodingTime) {
+    			var dataObj = { type: 'status', data: {
+                    statusType: 'system',
+                    text:	'Flooding protection! Message not sent!'
+                }}
+                sentToClient2(false, chatObj.chatter[socketid], dataObj);
+    			return false;
+    		} else {
+    			chatObj.info[socketid].userlastmsgtime = lastmsgsArr;
+    			return true;
+    		}
+    	}
+    }
     
     // check if message contains admin-commands
     function configCheck(msgText, socket) {
@@ -367,16 +398,25 @@ exports.chatApp = function (io, fs) {
         return userName;
     }
 
+    // removes whitespaces fromg beginning and end of string
+    function removeWhitespace(text) {
+    	return text.replace(/^\s+/, '').replace(/\s+$/, '');
+    }
+    
     // check if message contains a bad word and replace it
     function msgCheckBadword(msgText) {
-        for (word in msgBadList) { msgText = msgText.split(msgBadList[word]).join('*****'); }
+    	var msgBadListObj = msgBadList.split(',');
+        for (word in msgBadListObj) { 
+        	msgText = msgText.split(removeWhitespace(msgBadListObj[word])).join('*****'); 
+        }
         return msgText;
     }
     
     // check if username is in badwordlist
     function usernameCheckBadword(username) {
-        for (word in usernameBadList) {
-            username = username.split(usernameBadList[word]).join('depp');
+    	var usernameBadListObj = usernameBadList.split(',');
+        for (word in usernameBadListObj) {
+            username = username.split(removeWhitespace(usernameBadListObj[word])).join('depp');
         }
         return username;
     }

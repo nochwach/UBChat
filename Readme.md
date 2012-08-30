@@ -40,7 +40,7 @@ Go to js/chat.js and change whatever you want to change ;)
     RangeError: Maximum call stack size exceeded
 * log to file
 * log to database
-* flooding protection
+* ~~flooding protection~~        ->          30.08.2012 23:53
 * use node-heartbeat instead of own created heartbeat
 * user-rights (config, ignore)
 * use a comma seperated "usernameBadList" and "msgBadList" instead of object
