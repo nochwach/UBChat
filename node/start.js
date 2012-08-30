@@ -1,11 +1,12 @@
+// Startconfig
+var pathTohttpdocsFromHere = '/../';
+process.title = 'UBChat';
+
+
 // Strict-Mode
 "use strict";
 
-// Titel des Prozesses
-process.title = 'nodejs-ub';
-
-
-// Alle benötigten Module
+// all required modules
 var app = require('http').createServer(handler).listen(8175)
     , url = require('url')
     , path = require('path')
@@ -13,14 +14,14 @@ var app = require('http').createServer(handler).listen(8175)
     , fs = require('fs')
     
 
-// Webserver
+// create a small webserver to deliver all files
 function handler (req, res) {
     if (req.method !== 'GET') {
         res.writeHead(400);
         return res.end('400');
     }
     
-    var httpdocsPath = __dirname + '/../';
+    var httpdocsPath = __dirname + pathTohttpdocsFromHere;
     var urlObj = url.parse(req.url);
     var filePath = httpdocsPath + urlObj.pathname;
     if (filePath == httpdocsPath || filePath == httpdocsPath + '/') { filePath = httpdocsPath + '/index.html'; }
@@ -49,6 +50,6 @@ function handler (req, res) {
     stream.pipe(res);
 }
 
-// Apps hier einbinden
+// include our ChatApp
 var chat = require('./chat.js');
 chat.chatApp(io, fs);

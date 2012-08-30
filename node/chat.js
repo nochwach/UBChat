@@ -1,49 +1,26 @@
 exports.chatApp = function (io, fs) {
-
-    // Flooding                         
-    // Multiple IPs                     OK
-    // node-Heartbeat
-    // Rechte (Config, Ignore)			
-    // Rooms
-
     // Config
 	var confObj = {
-		historyLimit 	:	-100,						// History begrenzen auf die neuesten X Einträge (MINUS!)
-		heartbeatTimeout:	10000,						// Heartbeat-Timeout in ms (gezwungener Logout!)
-		logMessages		:	true,						// Sollen Nachrichten geloggt werden?
-		logChatter		:	true,						// Sollen Chatter-Logins-Logouts geloggt werden?
-		logViewer		:	true,						// Sollen Viewer-Logins-Logouts geloggt werden?
-		logTimeouts		:	true,						// Sollen Timeouts geloggt werden?
-		domainProtocol	:	'http://',					// Das verwendete Protokoll (mit :// !)
+		historyLimit 	:	-100,						// limit history to the last x entries (minus sign!)
+		heartbeatTimeout:	10000,						// Heartbeat-Timeout in ms (forced logout!)
+		logMessages		:	true,						// log messages?
+		logChatter		:	true,						// log chatter logins/logouts?
+		logViewer		:	true,						// log website connections/disconnections?
+		logTimeouts		:	true,						// log timeouts?
+		domainProtocol	:	'http://',					// the used protocol (including :// !)
 		domainPort		:	'www.raindrop.eu:8175/',	
-		scriptPath		:	'',							// Pfad zum Script (Trailing-Slash!)
-		smileyPath		:	'smileys/',					// Pfad zu den Smileys (Trailing-Slash!)
-		multipleIPs		:	3,							// Achtung: Zwei Verbindungen pro User bre Reload!
-		configpass		:	'1234567890'				// Passwort, um Chat zu konfigurieren
+		scriptPath		:	'',							// path to script (trailing slash!)
+		smileyPath		:	'smileys/',					// path to smileys (trailing slash!)
+		multipleIPs		:	3,							// Attention: Two connections per user needed if page reloaded!
+		configpass		:	'1234567890'				// pass to kick, ban, configure....
 	}
 	
-    var historyLimit        = -100;                     // History begrenzen auf die neuesten X Einträge (MINUS!)
-    var heartbeatTimeout    = 10000;                    // Heartbeat-Timeout in ms (gezwungener Logout!)
-    var logMessages         = true;                     // Sollen Nachrichten geloggt werden?
-    var logChatter          = true;                     // Sollen Chatter-Logins-Logouts geloggt werden?
-    var logViewer           = true;                     // Sollen Viewer-Logins-Logouts geloggt werden?
-    var logTimeouts         = true;                     // Sollen Timeouts geloggt werden?
-    var domainProtocol      = 'http://';                // Das verwendete Protokoll (mit :// !)
-    var domainPort          = 'www.raindrop.eu:8175/';  // IP bzw Domain (und evtl Port) (Trailing-Slash!)
-                                                        // IP-C-Uni: 10.141.1.74
-							                            // IP-L-Uni: 192.168.222.27
-                                                        // IP-C-Hom: 178.24.92.169
-    var scriptPath          = 'chat/';                  // Pfad zum Script (Trailing-Slash!)
-    var smileyPath          = 'smileys/';               // Pfad zu den Smileys (Trailing-Slash!)
-    var multipleIPs         = 3;                        // Anzahl gleichzeitig erlaubter Verbindungen pro IP
-                                                        // Achtung: Aktuell zwei Verbindungen pro User notwendig!
-    var configpass          = '1234567890';             // Passwort, um Chat zu konfigurieren
     var chatrooms           = {
         1:  'chat'
     };
         
     
-    var smileyObj           = {}                        // Smiley-Objekt: Zeichenkombo und Bilddatei angeben
+    var smileyObj           = {}
     smileyObj[':JUBEL:']    = { img: 'smilie_happy_011.gif', height: '27' };
     smileyObj[':D']         = { img: 'smilie_happy_309.gif', height: '27' };
     smileyObj[':)']         = { img: 'smilie_happy_053.gif', height: '20' };
@@ -57,6 +34,9 @@ exports.chatApp = function (io, fs) {
     smileyObj[':(']         = { img: 'ranting.gif', height: '24' };
     smileyObj[':P']         = { img: 'smilie_frech_019.gif', height: '40' };
     smileyObj[':MICRO:']    = { img: 'smilie_b_056.gif', height: '70' };
+    smileyObj['XD']    		= { img: 'smilie_happy_059.gif', height: '18' };
+    smileyObj['^^']    		= { img: 'smilie_happy_165.gif', height: '15' };
+    smileyObj[';)']    		= { img: 'smilie_happy_245.gif', height: '15' };
     
     var usernameBadList = {
         1:  'admin', 2:  'Admin', 3:  'root', 4:  'Root', 5:  'mod', 6:  'Mod', 7:  'System', 8:  'system', 9:  'SYSTEM'
@@ -66,20 +46,20 @@ exports.chatApp = function (io, fs) {
         1:  'arsch', 2:  'Arsch', 3:  'a r s c h', 4:  'A r s c h', 5:  'fuck', 6:  'Fuck'
     };
    
-    // <-- Ab hier nichts mehr ändern --> // <-- Ab hier nichts mehr ändern --> // <-- Ab hier nichts mehr ändern --> //
+    // <-- CONFIG END -> // <-- CONFIG END --> // <-- CONFIG END --> //
     
     // Init
-    var history             = [];                   // History bleibt ein Array!!
-    var heartbeats          = {};                   // Hier werden die TIMESTAMPS aller VIEWER eingetragen
-    var heartbeatRun        = false;                // Sobald der Heartbeatcheck beginnt -> true
-    var chatObj             = {};                   // chatObj speichert alle relevanten Informationen
-    chatObj.chatter         = {};                   // Hier werden die Sockets aller CHATTER eingetragen
-    chatObj.viewer          = {};                   // Hier werden die Sockets aller VIEWER eingetragen
-    chatObj.info            = {};                   // Hier werden alle Infos aller User eingetragen
+    var history             = [];
+    var heartbeats          = {};
+    var heartbeatRun        = false;
+    var chatObj             = {};
+    chatObj.chatter         = {};
+    chatObj.viewer          = {};
+    chatObj.info            = {};
     chatObj.info.startTime  = new Date().getTime();
-    var banObj              = [];                   // Liste mit allen gebannten Teilnehmern (IPs)
+    var banObj              = [];
     
-    // Konfiguration von Socket.IO
+    // we need to configure socket.io
     io.configure(function (){
         io.set('authorization', function (handshakeData, callback) {
             //console.log(handshakeData);
@@ -111,26 +91,26 @@ exports.chatApp = function (io, fs) {
         io.set('log level', 2);
     });
 
-    // Farben für Clients inkl Zufallssortierung
-        var colors = [ '#fb0f0f', '#c17c7c', '#883535', '#ed9021', '#bc9d77', '#7e501b', '#ece12f', '#c9c691', '#807b23', '#8dea13', '#b3d08d', '#5e8826', '#17f14f', '#95bfa0', '#23803b', '#28f1d2', '#a4d9d1', '#128573', '#1a99f1', '#90b5d0', '#1f567c', '#2342e3', '#616ca0', '#152679', '#6b24ed', '#8f7fac', '#432579', '#d622f1', '#b684bd', '#671a72' ];
+    // colors for buddylist
+    var colors = [ '#fb0f0f', '#c17c7c', '#883535', '#ed9021', '#bc9d77', '#7e501b', '#ece12f', '#c9c691', '#807b23', '#8dea13', '#b3d08d', '#5e8826', '#17f14f', '#95bfa0', '#23803b', '#28f1d2', '#a4d9d1', '#128573', '#1a99f1', '#90b5d0', '#1f567c', '#2342e3', '#616ca0', '#152679', '#6b24ed', '#8f7fac', '#432579', '#d622f1', '#b684bd', '#671a72' ];
     colors.sort(function(a,b) { return Math.random() > 0.5; } );
 
-    // Sobald die Webseite angezeigt wird
+    // enter here on every website-connection
     io.sockets.on('connection', function (socket) {
 //        console.log(io.sockets);
 //        console.log(socket.handshake);
 //        socket.handshake.tester = 'blabla';
 //        console.log(socket.handshake);
 //        console.log(io.sockets.manager.handshaken);
-        var userName    = false;            // userName zu Beginn false
-        var userColor   = false;            // userColor zu Beginn false
+        var userName    = false;            // initialize userName false
+        var userColor   = false;            // initialize userColor false
         newConnection(socket);
 
         socket.on('chatconnect', function() {
             newConnection(socket);
         });
                 
-        // Wenn eine Nachricht eintrifft
+        // enter here if a message comes in
         socket.on('message', function(message) {
             if (userName === false) {                                   // Wenn noch kein Username gesetzt wurde
                 userName = verifyUsername(message.data, chatObj);       // userName verifizieren
@@ -224,7 +204,7 @@ exports.chatApp = function (io, fs) {
         });
     });
     
-    // Kontrolle, ob Konfiguration geändert werden soll
+    // check if message contains admin-commands
     function configCheck(msgText, socket) {
         if (msgText.slice(0,1) == '/') {
             msgArr = msgText.split(' ');
@@ -348,7 +328,7 @@ exports.chatApp = function (io, fs) {
         return true;
     }
        
-    // Gauge versenden
+    // send gauge
     function sendGauge(chatObj) {
         var dataObj = { type: 'extra', data: {
             statusType:     'gauge',
@@ -358,14 +338,14 @@ exports.chatApp = function (io, fs) {
         sentToClient2(true, chatObj.viewer, dataObj);
     }
     
-    // Jede Nachricht escapen um Injections zu verhindern (sehr simpel!)
+    // escape messages to avoid injections (very simple solution!) <- toDo
     function htmlEntities(str, spaces) {
         if (spaces) { str = str.split(' ').join(''); }
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;')
             .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\\/g, '/');
     }
 
-    // Nachricht verifizieren
+    // verify message
     function verifyMessage(msgText) {
         msgText = msgText.slice(0, 500);                            // max Länge 500 Zeichen
         msgText = htmlEntities(msgText);                            // Sonderzeichen escapen
@@ -375,7 +355,7 @@ exports.chatApp = function (io, fs) {
         return msgText;
     }
     
-    // userName verifizieren
+    // verify userName
     function verifyUsername(userName, chatObj) {
         userName = htmlEntities(userName, true);                    // Sonderzeichen escapen
         userName = userName.slice(0, 20);                           // max Länge 20 Zeichen
@@ -387,13 +367,13 @@ exports.chatApp = function (io, fs) {
         return userName;
     }
 
-    // Message Badwords überprüfen
+    // check if message contains a bad word and replace it
     function msgCheckBadword(msgText) {
         for (word in msgBadList) { msgText = msgText.split(msgBadList[word]).join('*****'); }
         return msgText;
     }
     
-    // userName Badwords überprüfen
+    // check if username is in badwordlist
     function usernameCheckBadword(username) {
         for (word in usernameBadList) {
             username = username.split(usernameBadList[word]).join('depp');
@@ -401,7 +381,7 @@ exports.chatApp = function (io, fs) {
         return username;
     }
 
-    // userName auf bereits vorhandene überprüfen
+    // check if username exists
     function usernameExist(chatObj, checkname) {
         for (id in chatObj.info) {
             if (typeof chatObj.info[id] == 'object' && chatObj.info[id].username == checkname) {
@@ -411,7 +391,7 @@ exports.chatApp = function (io, fs) {
         return false;
     }
 
-    // Smileys ersetzen
+    // parse Smileys
     function parseSmileys(text) {
         for (smiley in smileyObj) {
             //var re = new RegExp(smiley,"g");
@@ -422,7 +402,7 @@ exports.chatApp = function (io, fs) {
         return text;
     }
     
-    // Links automatisch erkennen
+    // recognize urls within messages
     function checkUrl(msgText) {
         var urlRegex0 = /(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w\.-]*)*\/?/gi;
         return msgText.replace(urlRegex0, function(url) {
@@ -432,7 +412,7 @@ exports.chatApp = function (io, fs) {
         });
     }
 
-    // Heartbeats kontrollieren
+    // cheack heartbeats
     function checkHeartbeats(socket) {
         if (!heartbeatRun) {
             heartbeatRun = true;
@@ -452,7 +432,7 @@ exports.chatApp = function (io, fs) {
         }
     }
 
-    // Verbindung herstellen
+    // create connection
     function newConnection(socket) {
         chatObj.viewer[socket.id] = socket;                 // Socket in VIEWER eintragen
         setTimeout(function() { sendGauge(chatObj); },2000);// Gauge nach 2sec, da vorher auf Client initialisiert werden muss!!
@@ -474,7 +454,7 @@ exports.chatApp = function (io, fs) {
         }
     }
     
-    // Verbindung beenden closeType: logout/timeout
+    // close connection closeType: logout/timeout
     function closeConnection(socket, socketid, closeType) {
         if (chatObj.info[socketid]) {                                       // Chatter:
             colors.push(chatObj.info[socketid].usercolor);                  // Farbe zurück in Farbpool geben
@@ -504,7 +484,7 @@ exports.chatApp = function (io, fs) {
         return;
     }
 
-    // Log schreiben
+    // write logs
     function xLog(status, data, file) {
         switch (status) {
             case 'connect':
@@ -541,7 +521,7 @@ exports.chatApp = function (io, fs) {
 
     }
     
-    // Nachricht an Clients senden
+    // send a message to clients
     function sentToClient2(broadcast, targetObj, dataObj) {
         if (broadcast) {
             for (id in targetObj) {

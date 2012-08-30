@@ -333,10 +333,10 @@ $(function(){
     // Nachricht in Chatfenster schreiben
     function addMessage(author, message, color, dt, allWindows) {                   // Nachricht immer ANHÄNGEN
         var prelineHeight = checkLineHeight(message);
-        if (prelineHeight > 0) { 
+        if (prelineHeight > 20) { 
             lineHeight = 'line-height: ' + prelineHeight + 'px;';
         } else {
-            lineHeight = 'line-height: 1em;';
+            lineHeight = 'line-height: 1.5em;';
         }
         if (allWindows) {                               // Nachricht in ALLE Chatfenster schreiben
             jQuery.each($('.chatwindow'), function() {
@@ -368,10 +368,10 @@ $(function(){
     // Privatnachricht in Chatfenster schreiben
     function addPrivate(rcpt, author, message, color, dt) {                   // Nachricht immer ANHÄNGEN
         var prelineHeight = checkLineHeight(message);
-        if (prelineHeight > 0) { 
-            lineHeight = 'line-height: ' + prelineHeight + 5 + 'px;';
+        if (prelineHeight > 20) { 
+            lineHeight = 'line-height: ' + prelineHeight + 'px;';
         } else {
-            lineHeight = 'line-height: 1em;';
+            lineHeight = 'line-height: 1.5em;';
         }
         if (author == myName) {
             if (!$('#' + rcpt + 'prvt').length) {
@@ -444,7 +444,15 @@ $(function(){
         var htmlcontent = '';
         for (var i=0; i < data.length; i++) {
             var dt = new Date(data[i].time);
-            htmlcontent = htmlcontent + '<p><span style="color:' + data[i].color + '">' + data[i].from + '</span> @ ' +
+
+            var prelineHeight = checkLineHeight(data[i].text);
+            if (prelineHeight > 20) { 
+                lineHeight = 'line-height: ' + prelineHeight + 'px;';
+            } else {
+                lineHeight = 'line-height: 1.5em;';
+            }
+            
+            htmlcontent = htmlcontent + '<p style="' + lineHeight + '"><span style="color:' + data[i].color + '">' + data[i].from + '</span> @ ' +
                  + (dt.getHours() < 10 ? '0' + dt.getHours() : dt.getHours()) + ':'
                  + (dt.getMinutes() < 10 ? '0' + dt.getMinutes() : dt.getMinutes())
                  + ': ' + data[i].text + '</p>';
@@ -460,7 +468,7 @@ $(function(){
         $('#offline').hide();                                           // "Disconnect"-Button ausblenden
         $('#connect').show();                                           // "Connect"-Button einblenden
         $('#smileys').hide();                                           // Smileys ausblenden
-        $('#stats').hide();                                           // Stats ausblenden
+        $('#stats').hide();                                           	// Stats ausblenden
         $('#blist').html('');                                           // Buddyliste leeren
         gauges['gaugechatter'].redraw(0);                               // Rundinstrumente auf null setzen
         gauges['gaugeviewer'].redraw(0);
