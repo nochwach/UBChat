@@ -43,7 +43,7 @@ Go to js/chat.js and change whatever you want to change ;)
 * ~~flooding protection~~        ->          30.08.2012 23:53
 * use node-heartbeat instead of own created heartbeat
 * user-rights (config, ignore)
-* use a comma seperated "usernameBadList" and "msgBadList" instead of object
+* ~~use a comma seperated "usernameBadList" and "msgBadList" instead of object~~        ->          30.08.2012 23:53
 
 
 ### Commands
