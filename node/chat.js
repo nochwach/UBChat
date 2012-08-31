@@ -48,14 +48,16 @@ exports.chatApp = function (io, fs) {
     
     // Init
     var history             = [];
-    var heartbeats          = {};
-    var heartbeatRun        = false;
-    var chatObj             = {};
-    chatObj.chatter         = {};
-    chatObj.viewer          = {};
-    chatObj.info            = {};
-    chatObj.info.startTime  = new Date().getTime();
     var banObj              = [];
+    var colors 				= [];
+    var heartbeats          = {};
+    var chatObj             = {
+    	chatter	:	{},
+    	viewer	:	{},
+    	info	:	{ startTime: new Date().getTime() }
+    };
+    var heartbeatRun        = false;
+    
     
     // we need to configure socket.io
     io.configure(function (){
@@ -91,9 +93,10 @@ exports.chatApp = function (io, fs) {
         io.set('log level', 2);
     });
 
-    // colors for buddylist
-    var colors = [ '#fb0f0f', '#c17c7c', '#883535', '#ed9021', '#bc9d77', '#7e501b', '#ece12f', '#c9c691', '#807b23', '#8dea13', '#b3d08d', '#5e8826', '#17f14f', '#95bfa0', '#23803b', '#28f1d2', '#a4d9d1', '#128573', '#1a99f1', '#90b5d0', '#1f567c', '#2342e3', '#616ca0', '#152679', '#6b24ed', '#8f7fac', '#432579', '#d622f1', '#b684bd', '#671a72' ];
-    colors.sort(function(a,b) { return Math.random() > 0.5; } );
+    // generate 100 Colors for 100 Users (more user = black color)
+    for ($i=1;$i<100;$i++) {
+    	colors.push(colorGen(100, i));
+    }
 
     // enter here on every website-connection
     io.sockets.on('connection', function (socket) {
@@ -122,7 +125,7 @@ exports.chatApp = function (io, fs) {
                     name:       userName
                 }}
                 sentToClient2(false, socket, dataObj);
-                chatObj.chatter[socket.id] = socket;	// register socket in chatterlist
+                chatObj.chatter[socket.id] = socket; // register socket in chatterlist
                 xLog('name', { 'id': socket.id, 'who': userName, 'what': userColor });
                 var dataObj = { type: 'status', data: {
                     statusType: 'login',
@@ -159,7 +162,6 @@ exports.chatApp = function (io, fs) {
                     if (floodingProtection(socket.id)) {
 	                    var privateCheck = usernameExist(chatObj, message.rcpt);
 	                    if (privateCheck) {
-	                    	
 	                        var dataObj = { type: 'message', data: {
 	                            statusType: 'private',
 	                            message:    msgObj
@@ -171,7 +173,6 @@ exports.chatApp = function (io, fs) {
 	                        }}
 	                        sentToClient2(false, chatObj.chatter[socket.id], dataObj);
 	                    } else {
-	                    	
 	                        history.push(msgObj);								// insert current msgObj in history
 	                        history = history.slice(confObj.historyLimit);      // limit history
 	                        var validroom = false;
@@ -210,6 +211,27 @@ exports.chatApp = function (io, fs) {
         });
     });
     
+    // color generator -> rainbow!
+    function colorGen(numOfSteps, step) {
+        // Adam Cole, 2011-Sept-14
+        // HSV to RBG adapted from: http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
+        var r, g, b;
+        var h = step / numOfSteps;
+        var i = ~~(h * 6);
+        var f = h * 6 - i;
+        var q = 1 - f;
+        switch(i % 6){
+            case 0: r = 1, g = f, b = 0; break;
+            case 1: r = q, g = 1, b = 0; break;
+            case 2: r = 0, g = 1, b = f; break;
+            case 3: r = 0, g = q, b = 1; break;
+            case 4: r = f, g = 0, b = 1; break;
+            case 5: r = 1, g = 0, b = q; break;
+        }
+        var c = "#" + ("00" + (~ ~(r * 255)).toString(16)).slice(-2) + ("00" + (~ ~(g * 255)).toString(16)).slice(-2) + ("00" + (~ ~(b * 255)).toString(16)).slice(-2);
+        return (c);
+    }
+
     // floodingProtection
     function floodingProtection(socketid) {
     	var lastmsgsArr = chatObj.info[socketid].userlastmsgtime;
@@ -235,11 +257,12 @@ exports.chatApp = function (io, fs) {
     	}
     }
     
-    // check if message contains admin-commands
+    // check if message contains admin- or public-commands
     function configCheck(msgText, socket) {
         if (msgText.slice(0,1) == '/') {
             msgArr = msgText.split(' ');
             if (msgArr[1] == confObj.configpass) {
+            	// here only admin-commands
                 if (msgArr[0] == '/config') {
                 
                 } else if (msgArr[0] == '/ban' && msgArr.length >= 5) {
@@ -346,6 +369,41 @@ exports.chatApp = function (io, fs) {
                         text:    'Unbekannter Befehl!'
                     }};
                     sentToClient2(false, socket, dataObj);
+                }
+            } else if (msgArr[0] == '/ignore' || msgArr[0] == '/unignore') {
+            	// here "public" available commands
+            	if (msgArr[0] == '/ignore') {
+            		var ignoreId = usernameExist(chatObj, msgArr[1]);
+                    if (ignoreId) {
+                        // ToDo: User in Ignorliste eintragen!
+                        var dataObj = { type: 'status', data: {
+                            statusType:     'system',
+                            text:    'User wird nun ignoriert!'
+                        }};
+                        sentToClient2(false, socket, dataObj);
+                    } else {
+                    	var dataObj = { type: 'status', data: {
+                            statusType:     'system',
+                            text:    'User nicht online!'
+                        }};
+                        sentToClient2(false, socket, dataObj);
+                    }
+                } else if (msgArr[0] == '/unignore') {
+                	var ignoreId = ''; // ToDo: Check ob User in Ignorliste steht!
+                    if (ignoreId) {
+                        // ToDo: User aus Ignorliste austragen!
+                        var dataObj = { type: 'status', data: {
+                            statusType:     'system',
+                            text:    'User wird nicht mehr ignoriert!'
+                        }};
+                        sentToClient2(false, socket, dataObj);
+                    } else {
+                    	var dataObj = { type: 'status', data: {
+                            statusType:     'system',
+                            text:    'User wurde nicht ignoriert!'
+                        }};
+                        sentToClient2(false, socket, dataObj);
+                    }
                 }
             } else {
             	var dataObj = { type: 'status', data: {
